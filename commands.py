@@ -105,8 +105,19 @@ async def verify_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
         "\n\nHaving trouble? contact /support", reply_markup=ReplyKeyboardRemove()
     )
     else:
-        if(status=="successful"):
-            action = "start"
         await update.message.reply_text(
         f"Payment {status}", reply_markup=ReplyKeyboardRemove()
     )
+        if(status=="successful"):
+            await context.bot.unban_chat_member(chat_id="", user_id="", only_if_banned=True)
+            invite_link = await context.bot.create_chat_invite_link(chat_id="",expire_date="",member_limit=1,)
+            # Academy is lifetime so amount and package is a constant, no need to fetch t
+            # Just hard code t f needed
+            # but also meaning no database needed(optional) for academy, coz no checks will be required
+            # no group removal required for academy as user is never banned
+            # meaning just an ivite completes this
+            # only for signals, would this be the part where: add to database logic
+            await update.message.reply_text(
+            f"Here is your invite link \n{invite_link}", reply_markup=ReplyKeyboardRemove()
+            )
+        
