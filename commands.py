@@ -1,3 +1,4 @@
+from datetime import timedelta
 import logging
 
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardMarkup, ReplyKeyboardRemove, Update
@@ -6,7 +7,8 @@ from telegram.ext import (
     ConversationHandler,
 )
 
-from flutterwave import generate_payment_link, generate_payment_reference, verify_payment
+from database import check_subscription, secure, wipe_token
+from flutterwave import generate_payment_reference, verify_payment
 
 # Enable logging
 logging.basicConfig(
@@ -23,12 +25,12 @@ globals = {"transaction_reference": ""}
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     reply_keyboard = [
-        ["Become a VIP"],
+        ["Join VIP Signals"],
         ["Join the Monster Academy"],
         ]
     user = update.message.from_user
     await update.message.reply_text(
-        f"Hi {user.first_name}, I'm the Forex Monsters Assistant Bot. I will be helping you today.\n\n"
+        f"Hi {user.first_name} - {user.id}, I'm the Forex Monsters Assistant Bot. I will be helping you today.\n\n"
         "What would you like to do?",
         reply_markup=ReplyKeyboardMarkup(
             reply_keyboard, one_time_keyboard=True, input_field_placeholder="", resize_keyboard=True
@@ -42,13 +44,44 @@ async def choose(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     text = update.message.text
     context.user_data["action"] = text
     logger.info("Action of %s: %s", user.first_name, text)
-    if(text=="Become a VIP"):
+    if(text=="Join VIP Signals"):
         keyboard = [
             [InlineKeyboardButton("1 Month Access  💲20", url="https://forexmonsters.selar.co/2886b2",)],
             [InlineKeyboardButton("3 Months Access 💲50", url="https://forexmonsters.selar.co/232834")],
             [InlineKeyboardButton("6 Months Access 💲100", url="https://forexmonsters.selar.co/98413c")],
         ]
         reply_markup = InlineKeyboardMarkup(keyboard)
+        await update.message.reply_text("First copy the USER ID below, we'll ask for it:",reply_markup=ReplyKeyboardRemove())
+        await update.message.reply_text(f"{user.id}",reply_markup=ReplyKeyboardRemove())
+
+        token:str = generate_payment_reference()
+
+        """I'm creating an 'auth token' replica a minute later
+        As no way a user can complete Selar's payment flow before a minute's end
+        Unless a malicious attempt is in progress
+        :SECURITY 101
+        """
+        name = f"s{user.id}"
+        due = timedelta(seconds=60)
+        current_jobs = context.job_queue.get_jobs_by_name(name)
+        if(current_jobs):
+            for job in current_jobs:
+                job.schedule_removal()
+        context.job_queue.run_once(secure,due, name=name, user_id=user.id, data=token)
+        
+        """I'm invalidating the 'auth token' replica 15 minutes later
+        As no way a user has not yet claimed their package
+        Or atleast they should have
+        :SECURITY 101
+        """
+        name = str(user.id)
+        due = timedelta(minutes=15)
+        current_jobs = context.job_queue.get_jobs_by_name(name)
+        if(current_jobs):
+            for job in current_jobs:
+                job.schedule_removal()
+        context.job_queue.run_once(wipe_token,due, name=name, data=token)
+        
         await update.message.reply_text(
             "To trade with the winning team 😎, be part of the VIPs for daily signals 👌🚀 Let's go 🏹"
             "\n\n1 Month  💲̶4̶0̶ ❌ Now 💲20 ✅"
@@ -59,13 +92,8 @@ async def choose(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
             ,
             reply_markup=reply_markup,
         )
-        # return ConversationHandler.END
     else:
-        # url="https://forexmonsters.selar.co/4rp3zp"
-        payment_reference = generate_payment_reference()
-        url:str = await generate_payment_link(payment_reference, str(1000))
-        globals["transaction_reference"] = payment_reference
-        logger.info(f"Transaction Reference: {globals["transaction_reference"]}")
+        url="https://forexmonsters.selar.co/4rp3zp"
         keyboard = [
             [InlineKeyboardButton("Monsters Mentorship  💲130", url=url,)],
         ]
@@ -75,12 +103,9 @@ async def choose(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
             "\n\nWith the right guidance and lessons, you can fulfill your dreams from the forex industry. Your seat awaits you 🚀🚀🚀"
             "\n\nJoin the Monster Academy and get all the necessary skills to become a pro 😎"
             "\n\nOriginal 💲̶3̶5̶0̶ ❌🙅🏿‍♂️ Now 💲130 ✅👌"
-            "\n\nProceed below for payment while discount lasts. DON'T MISS OUT 🔥"
-            "\n\nClick /verify once done to be enrolled in"
-            ,
+            "\n\nProceed below for payment while discount lasts. DON'T MISS OUT 🔥",
             reply_markup=reply_markup,
         )
-        # return ConversationHandler.END
     return ConversationHandler.END
 
 async def cancel(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
@@ -120,4 +145,35 @@ async def verify_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
             await update.message.reply_text(
             f"Here is your invite link \n{invite_link}", reply_markup=ReplyKeyboardRemove()
             )
+    
+async def check_subscription_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user = update.message.from_user
+    result = await check_subscription(user.id)
+    print(result)
+    if(result):
+        await update.message.reply_text(
+            f"You are currently subscribed to {result[1]}", reply_markup=ReplyKeyboardRemove()
+        )
+    else:
+        await update.message.reply_text(
+            "You do not have an active subscription", reply_markup=ReplyKeyboardRemove()
+        )
+
+async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    await update.message.reply_text(
+        "/start to start a session"
+        "\n/check to check subscription"
+        "\n/support to communicate with us"
+        "\n/help to display available commands", reply_markup=ReplyKeyboardRemove()
+    )
+
+    return ConversationHandler.END
+
+async def support_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    await update.message.reply_text(
+        "Contact"
+        "\nforexmonstersteam@gmail.com", reply_markup=ReplyKeyboardRemove()
+    )
+
+    return ConversationHandler.END
         
