@@ -11,15 +11,16 @@ from telegram.ext import (
 )
 import uvicorn
 from asgiref.wsgi import WsgiToAsgi
-from apscheduler.schedulers.background import BackgroundScheduler
 
 from commands import CHOOSE, cancel, check_subscription_command, choose, help_command, start, support_command, verify_command
-from database import add_subscription, check_raw_token, check_subscription, check_token, create_database, create_tokens_database, remove_subscription
+from database import add_academy_subscription, add_subscription, check_academy_subscription, check_academy_token, check_raw_academy_token, check_raw_token, check_subscription, check_token, create_academy_database, create_academy_tokens_database, create_database, create_tokens_database, remove_subscription
 from keys import CHANNEL_CHAT_ID, GROUP_CHAT_ID, MAIL_PASSWORD, MAIL_USERNAME, TELEGRAM_BOT_KEY
 from flask_mail import Mail, Message
 
 create_database()
+create_academy_database()
 create_tokens_database()
+create_academy_tokens_database()
 
 async def main() -> None:
     """Run the bot."""
@@ -64,6 +65,12 @@ async def main() -> None:
         full_name = request.args.get('fullname')
         return render_template("initiate_signals.html", full_name=full_name,user_email=user_email)
     
+    @flask_app.route("/initiate-mentorship")
+    async def initiate_mentorship():
+        user_email = request.args.get('email')
+        full_name = request.args.get('fullname')
+        return render_template("initiate_mentorship.html", full_name=full_name,user_email=user_email)
+    
     @flask_app.post("/generate-signals-link")
     async def generate_signals_link():
         user_id = request.form['user_id']
@@ -76,6 +83,21 @@ async def main() -> None:
         if (proceed):
             token=proceed[1]
             return redirect(url_for("signals",user_id=user_id,token=token))
+        else:
+            abort(401)
+
+    @flask_app.post("/generate-mentorship-link")
+    async def generate_mentorship_link():
+        user_id = request.form['user_id']
+        """Checking if current user actually came from Telgram Bot
+        False if no 'auth token' replica is available for their user id
+        They could have just stored the redirect_url and are getting back
+        :SECURITY 101
+        """
+        proceed = await check_academy_token(user_id)
+        if (proceed):
+            token=proceed[1]
+            return redirect(url_for("mentorship",user_id=user_id,token=token))
         else:
             abort(401)
     
@@ -111,6 +133,35 @@ async def main() -> None:
                 return render_template("signals_invite.html", invite_link=invite_link)
         else:
             abort(401)
+
+    @flask_app.route("/mentorship/<user_id>/<token>")
+    async def mentorship(user_id,token):
+        chat_id=CHANNEL_CHAT_ID
+        proceed = await check_raw_academy_token(token)
+        """Checking provided 'auth token' replica is valid
+        False if no such 'auth token' exists in system
+        They could have just stored the auth generating url with an old 'auth token' replica
+        :SECURITY 101
+        """
+        if(proceed):
+            subscribed = await check_academy_subscription(user_id)
+            """Checking if user is already subscribed given ther 'auth token' replica is valid
+           True if they have an existing subscription in the database
+            They are probably just coming back to generate links for other Telegram user accounts
+            while the access token is still valid
+            :SECURITY 101
+            """
+            if(subscribed):
+                abort(409)
+            else:
+                await add_academy_subscription(user_id)
+                expire_date = ""
+                await application.bot.unban_chat_member(chat_id=chat_id,user_id=user_id,only_if_banned=True)
+                invite_object = await application.bot.create_chat_invite_link(chat_id=chat_id,member_limit=1,expire_date=expire_date)
+                invite_link = invite_object.invite_link
+                return render_template("mentorship_invite.html", invite_link=invite_link)
+        else:
+            abort(401)
     
     @flask_app.route("/academy-invite")
     async def invite():
@@ -118,8 +169,6 @@ async def main() -> None:
         full_name = request.args.get('fullname')
         chat_id= GROUP_CHAT_ID
         invite_object = await application.bot.create_chat_invite_link(chat_id=chat_id,member_limit=1)
-        # await application.bot.ban_chat_member(chat_id="",user_id="")
-        # await application.bot.unban_chat_member(chat_id="",user_id="",only_if_banned=True)
         invite_link = invite_object.invite_link
         sender = "Forex_Monsters_Academy"
         subject = "Forex Monsters Academy Enrolment"
@@ -162,7 +211,7 @@ async def main() -> None:
     # Run application and webserver together
     async with application:
         # pip install "python-telegram-bot[job-queue]"
-        await application.bot.set_my_commands([('start','Starts the bot'),('check','Checks subscription status'),('support','Offers quick contact'),('help','Lists available commands')])
+        await application.bot.set_my_commands([('start','Starts the bot'),('check','Checks subscription status'),('support','Offers quick contact'),('help','Shows available commands')])
         await application.bot.set_chat_menu_button()
         await application.start()
         await application.updater.start_polling()

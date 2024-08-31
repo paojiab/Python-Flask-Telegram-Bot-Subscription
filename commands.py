@@ -7,7 +7,7 @@ from telegram.ext import (
     ConversationHandler,
 )
 
-from database import check_subscription, secure, wipe_token
+from database import academy_secure, check_subscription, secure, wipe_academy_token, wipe_token
 from flutterwave import generate_payment_reference, verify_payment
 
 # Enable logging
@@ -98,6 +98,38 @@ async def choose(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
             [InlineKeyboardButton("Monsters Mentorship  💲130", url=url,)],
         ]
         reply_markup = InlineKeyboardMarkup(keyboard)
+
+        await update.message.reply_text("First copy the USER ID below, we'll ask for it:",reply_markup=ReplyKeyboardRemove())
+        await update.message.reply_text(f"{user.id}",reply_markup=ReplyKeyboardRemove())
+
+        token:str = generate_payment_reference()
+
+        """I'm creating an 'auth token' replica a minute later
+        As no way a user can complete Selar's payment flow before a minute's end
+        Unless a malicious attempt is in progress
+        :SECURITY 101
+        """
+        name = f"ms{user.id}"
+        due = timedelta(seconds=60)
+        current_jobs = context.job_queue.get_jobs_by_name(name)
+        if(current_jobs):
+            for job in current_jobs:
+                job.schedule_removal()
+        context.job_queue.run_once(academy_secure,due, name=name, user_id=user.id, data=token)
+        
+        """I'm invalidating the 'auth token' replica 15 minutes later
+        As no way a user has not yet claimed their package
+        Or atleast they should have
+        :SECURITY 101
+        """
+        name = f"m{user.id}"
+        due = timedelta(minutes=15)
+        current_jobs = context.job_queue.get_jobs_by_name(name)
+        if(current_jobs):
+            for job in current_jobs:
+                job.schedule_removal()
+        context.job_queue.run_once(wipe_academy_token,due, name=name, data=token)
+
         await update.message.reply_text(
             "You deserve it all 💰🤑💸 and you should not be struggling all by yourself ✊"
             "\n\nWith the right guidance and lessons, you can fulfill your dreams from the forex industry. Your seat awaits you 🚀🚀🚀"
