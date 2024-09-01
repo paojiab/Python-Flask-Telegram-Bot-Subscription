@@ -100,7 +100,7 @@ async def main() -> None:
             return redirect(url_for("mentorship",user_id=user_id,token=token))
         else:
             abort(401)
-    
+
     @flask_app.route("/signals/<user_id>/<token>")
     async def signals(user_id,token):
         chat_id=CHANNEL_CHAT_ID
@@ -119,7 +119,8 @@ async def main() -> None:
             :SECURITY 101
             """
             if(subscribed):
-                abort(409)
+                # abort(409)
+                return render_template("error409.html")
             else:
                 await add_subscription(user_id,"month")
                 # schedule user removal

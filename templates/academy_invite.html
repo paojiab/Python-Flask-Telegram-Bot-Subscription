@@ -1,15 +1,74 @@
 <!DOCTYPE html>
+</html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Forex Monsters Academy Enrolment</title>
+    <title>VIP Membership Unlocked</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            color: #333;
+        }
+        .container {
+            background-color: rgba(255, 255, 255, 0.95);
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            padding: 3rem;
+            width: 90%;
+            max-width: 500px;
+            text-align: center;
+        }
+        h1 {
+            color: #4a5568;
+            margin-bottom: 1.5rem;
+            font-size: 2.5rem;
+        }
+        p {
+            margin-bottom: 2rem;
+            font-size: 1.1rem;
+            line-height: 1.6;
+        }
+        .cta-button {
+            display: inline-block;
+            background-color: #4CAF50;
+            color: white;
+            text-decoration: none;
+            padding: 1rem 2rem;
+            border-radius: 50px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .cta-button:hover {
+            background-color: #45a049;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 8px rgba(0, 0, 0, 0.15);
+        }
+        .icon {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+        }
+        a {
+            text-decoration: none;
+        }
+    </style>
 </head>
-<body >
-    <p>Dear {{ full_name }}</p>
-    <h2>Thank you for your successful payment.</h2>
-    <p>We'd therefore like to invite you to join our exclusive mentorship Telegram group. Here's your invite link:</p>
-    <a href="{{ invite_link }}">Join Now</a>
-    <p>A copy of this information has been sent to: <u><i>{{ user_email }}</i></u> </p>
+<body>
+    <div class="container">
+        <div class="icon">🌟</div>
+        <h1>VIP Membership Unlocked</h1>
+        <p>Congratulations! You've been invited to join our exclusive signals Telegram channel. Get ready for premium insights and opportunities.</p>
+        <a href="{{ invite_link }}" class="cta-button">Join Now</>
+    </div>  
 </body>
 </html>
