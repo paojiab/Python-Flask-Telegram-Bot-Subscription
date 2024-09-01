@@ -84,7 +84,8 @@ async def main() -> None:
             token=proceed[1]
             return redirect(url_for("signals",user_id=user_id,token=token))
         else:
-            abort(401)
+             # if the user trying to regenerate another link it returns for them this page
+            return render_template("error401.html")
 
     @flask_app.post("/generate-mentorship-link")
     async def generate_mentorship_link():
@@ -99,7 +100,8 @@ async def main() -> None:
             token=proceed[1]
             return redirect(url_for("mentorship",user_id=user_id,token=token))
         else:
-            abort(401)
+             # if the user trying to regenerate another link it returns for them this page
+            return render_template("error401.html")
 
     @flask_app.route("/signals/<user_id>/<token>")
     async def signals(user_id,token):
@@ -113,13 +115,13 @@ async def main() -> None:
         if(proceed):
             subscribed = await check_subscription(user_id)
             """Checking if user is already subscribed given ther 'auth token' replica is valid
-           True if they have an existing subscription in the database
+            True if they have an existing subscription in the database
             They are probably just coming back to generate links for other Telegram user accounts
             while the access token is still valid
             :SECURITY 101
             """
             if(subscribed):
-                # abort(409)
+                # # if the user trying to user a link 2twice it returns for them this page
                 return render_template("error409.html")
             else:
                 await add_subscription(user_id,"month")
@@ -133,7 +135,8 @@ async def main() -> None:
                 invite_link = invite_object.invite_link
                 return render_template("signals_invite.html", invite_link=invite_link)
         else:
-            abort(401)
+            # if the user trying to regenerate another link it returns for them this page
+            return render_template("error401.html")
 
     @flask_app.route("/mentorship/<user_id>/<token>")
     async def mentorship(user_id,token):
@@ -153,7 +156,9 @@ async def main() -> None:
             :SECURITY 101
             """
             if(subscribed):
-                abort(409)
+                # abort(409)
+                # # if the user trying to user a link 2twice it returns for them this page
+                return render_template("error409.html")
             else:
                 await add_academy_subscription(user_id)
                 expire_date = ""
@@ -162,7 +167,8 @@ async def main() -> None:
                 invite_link = invite_object.invite_link
                 return render_template("mentorship_invite.html", invite_link=invite_link)
         else:
-            abort(401)
+            # if the user trying to regenerate another link it returns for them this page
+            return render_template("error401.html")
     
     @flask_app.route("/academy-invite")
     async def invite():
