@@ -1,18 +1,89 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Forex Monsters Mentorship Enrolment</title>
+    <title>Mentorship Payment Confirmation</title>
+    <style>
+        body {
+            background-repeat: repeat;
+            background-image: url('static/images/fxm.jpg') ;
+            font-family: 'Arial', sans-serif;
+            line-height: 1.6;
+            color: #333;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+        .container {
+            background-color: rgb(216, 170, 19);
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            padding: 2rem;
+            width: 100%;
+            max-width: 500px;
+            text-align: center;
+        }
+        h1 {
+            color: #000000;
+            margin-bottom: 1rem;
+        }
+        p {
+            margin-bottom: 1.5rem;
+        }
+        .input-group {
+            margin-bottom: 1.5rem;
+            margin-right: 1.5rem;
+        }
+        input[type="text"] {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 1rem;
+        }
+        button {
+            background-color: #201418;        
+            font-size: 1rem;
+            border: 2px solid #000103;
+            border-radius: 10px;
+            color: #ffffff;
+            display: inline-block;
+            padding: 15px 35px;
+            text-decoration: none;
+            margin: 25px 0;
+            transition: background-color 200ms ease-in-out;
+        }
+        button:hover {
+            background-color: rgb(128, 99, 6);
+        }
+        .notice {
+            font-size: 0.9rem;
+            color: #010101;
+            margin-top: 1.5rem;
+        }
+    </style>
 </head>
 <body>
-    <p>Dear {{ full_name }}</p>
-    <h2>Thank you for your successful payment.</h2>
-    <p>Enter your copied USER ID below:</p>
-    <form action="/generate-mentorship-link", method="POST">
-        <input type="text" name="user_id" id="userId" placeholder="USER ID">
-        <button type="submit">Generate access link</button>
-    </form>
-   <p>Incase you didn't catch your USER ID, go back get it, a link to this page will be in your Selar Receipt email. Activation is time limited so get back as soon as possible.</p>
+    <div class="container">
+        <p>Dear {{ full_name }}</p>
+        <h1>Thank you for your successful payment</h1>
+        <p>Please enter your copied USER ID below to generate your access link.</p>
+       
+        <form action="/generate-mentorship-link" method="POST">
+            <input type="text" name="user_id" id="userId" placeholder="Enter your USER ID">
+            <button type="submit">Generate access link</button>
+        </form>
+
+              
+        <p class="notice">
+            If you didn't catch your USER ID, check your Selar Receipt email for a link to this page. 
+            Activation is time-limited, so please return as soon as possible.
+        </p>
+    </div>
 </body>
 </html>
